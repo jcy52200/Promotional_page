@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未来界限 · 高级毕业设计团队</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        zinc: {
+                            50: '#fafafa', 100: '#f4f4f5', 200: '#e4e4e7',
+                            300: '#d4d4d8', 400: '#a1a1aa', 500: '#71717a',
+                            600: '#52525b', 700: '#3f3f46', 800: '#27272a', 900: '#18181b',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 20px 40px -15px rgba(0,0,0,0.05)',
+                        'card-hover': '0 10px 30px -10px rgba(0,0,0,0.08)',
+                    },
+                    animation: {
+                        'marquee': 'marquee 35s linear infinite',
+                        'marquee-reverse': 'marquee-reverse 45s linear infinite',
+                        'marquee-slow': 'marquee 50s linear infinite',
+                    },
+                    keyframes: {
+                        marquee: { '0%': { transform: 'translateX(0%)' }, '100%': { transform: 'translateX(-50%)' } },
+                        'marquee-reverse': { '0%': { transform: 'translateX(-50%)' }, '100%': { transform: 'translateX(0%)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 原生 CSS 补充 (高级动效) -->
+    <style>
+        body {
+            background-color: #fafafa;
+            color: #18181b;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+            overflow-x: hidden;
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 首次加载幕布特效 */
+        #page-loader {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #fafafa; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1), opacity 0.8s ease;
+        }
+        #page-loader.hide {
+            transform: translateY(-100%); opacity: 0; pointer-events: none;
+        }
+        .loader-line {
+            width: 0; height: 2px; background: #18181b; border-radius: 2px;
+            animation: loadLine 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes loadLine { 100% { width: 150px; } }
+
+        /* 渐进式滚动特效 (Apple 风格 Blur Reveal) */
+        .reveal-item {
+            opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(10px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-item.is-visible {
+            opacity: 1; transform: translateY(0) scale(1); filter: blur(0);
+        }
+
+        /* 顶部滚动进度条 */
+        #progress-bar {
+            position: fixed; top: 0; left: 0; height: 3px; background: #18181b;
+            width: 0%; z-index: 9000; transition: width 0.1s ease-out;
+        }
+
+        /* 横向画廊的吸附配置 (Scroll Snap) */
+        .gallery-container {
+            scroll-snap-type: x mandatory;
+            scroll-padding-left: max(1.5rem, calc((100vw - 80rem) / 2 + 1.5rem)); /* 适配两边留白 */
+        }
+        .gallery-item {
+            scroll-snap-align: start; /* 吸附于最左侧 */
+        }
+
+        /* 好评轮播样式 */
+        .testimonial-container {
+            scroll-snap-type: x mandatory;
+            scroll-padding-left: max(1.5rem, calc((100vw - 80rem) / 2 + 1.5rem));
+            align-items: center;
+        }
+        .testimonial-item {
+            scroll-snap-align: start;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .testimonial-item img {
+            max-width: 90vw;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+        .testimonial-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 图片悬停 */
+        .img-hover-zoom { transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .group:hover .img-hover-zoom { transform: scale(1.05); }
+
+        /* ====== 修复后的 CSS2D 标签样式 ====== */
+        .sphere-label-inner {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #52525b; font-size: 13px; font-weight: 500;
+            padding: 6px 14px; border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto; user-select: none; cursor: pointer; white-space: nowrap;
+        }
+        .sphere-label-inner:hover {
+            background: #18181b; color: #ffffff; transform: scale(1.15);
+            border-color: #18181b; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body class="antialiased selection:bg-zinc-200 selection:text-zinc-900">
+
+    <!-- 加载幕布 -->
+    <div id="page-loader">
+        <div class="text-sm font-bold tracking-widest text-zinc-900 mb-4 uppercase">Graduation Studio</div>
+        <div class="loader-line"></div>
+    </div>
+
+    <!-- 顶部进度条 -->
+    <div id="progress-bar"></div>
+
+    <!-- 导航栏 / 顶部占位 -->
+    <header class="max-w-7xl mx-auto px-6 py-10 flex justify-between items-center reveal-item delay-100">
+        <div class="text-xl font-bold tracking-tighter text-zinc-900">Graduation<span class="text-zinc-400 font-normal">.Studio</span></div>
+        <a href="#contact" class="text-sm font-medium px-5 py-2.5 rounded-full bg-zinc-900 text-white hover:bg-zinc-800 transition-colors shadow-sm">
+            开启咨询
+        </a>
+    </header>
+
+    <!-- 1. 团队理念 -->
+    <section class="max-w-7xl mx-auto px-6 py-16" id="philosophy">
+        <div class="text-center mb-20 reveal-item delay-200">
+            <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight text-zinc-900 mb-6 leading-tight">拒绝平庸，<br>重塑学术交付。</h2>
+            <p class="text-zinc-500 max-w-2xl mx-auto text-lg md:text-xl">摒弃廉价外包感，以科技公司的一线标准，打造属于您的年度高分毕业设计。</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white border border-zinc-200 rounded-[2.5rem] p-10 hover:-translate-y-2 hover:shadow-card-hover transition-all duration-500 reveal-item">
+                <div class="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center mb-8">
+                    <i class="fa-solid fa-code-branch text-zinc-700 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4 text-zinc-900">底层创新驱动</h3>
+                <p class="text-zinc-500 leading-relaxed text-sm md:text-base">结合最新的 AI 大模型与现代 Web 框架，让您的设计不仅仅是作业，而是具备工业级前瞻性的作品。</p>
+            </div>
+            <div class="bg-white border border-zinc-200 rounded-[2.5rem] p-10 hover:-translate-y-2 hover:shadow-card-hover transition-all duration-500 reveal-item" style="transition-delay: 100ms;">
+                <div class="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center mb-8">
+                    <i class="fa-solid fa-book-open text-zinc-700 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4 text-zinc-900">深度学术严谨</h3>
+                <p class="text-zinc-500 leading-relaxed text-sm md:text-base">提供清晰的架构图、完善的数据库设计及严密的算法逻辑，为您的论文撰写提供坚实的支撑与依据。</p>
+            </div>
+            <div class="bg-white border border-zinc-200 rounded-[2.5rem] p-10 hover:-translate-y-2 hover:shadow-card-hover transition-all duration-500 reveal-item" style="transition-delay: 200ms;">
+                <div class="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center mb-8">
+                    <i class="fa-solid fa-server text-zinc-700 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold mb-4 text-zinc-900">极简实战落地</h3>
+                <p class="text-zinc-500 leading-relaxed text-sm md:text-base">标准容器化交付，杜绝环境配置报错。提供细致入微的本地部署指导与答辩前的技术实战演练。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. 当前毕业设计方案 (全新方案 A) -->
+    <section class="py-24 bg-white border-y border-zinc-200" id="plans">
+        <div class="max-w-7xl mx-auto px-6 mb-20 text-center reveal-item">
+            <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900">甄选方案池</h2>
+            <p class="text-zinc-500 mt-4 text-lg">从前沿 AI 集成到经典企业架构，完美契合不同专业维度</p>
+        </div>
+
+        <!-- 方案 A 标头 -->
+        <div class="max-w-7xl mx-auto px-6 mb-16 reveal-item">
+            <div class="flex items-center gap-4">
+                <div class="w-2 h-8 bg-zinc-900 rounded-full"></div>
+                <h3 class="text-2xl md:text-3xl font-bold text-zinc-900">方案 A / 前沿 AI 与智能体集成</h3>
+            </div>
+        </div>
+
+        <!-- 案例 1 (顶部文字 + 底部画廊吸附) -->
+        <div class="mb-32">
+            <!-- 文字介绍 -->
+            <div class="max-w-7xl mx-auto px-6 mb-10 reveal-item">
+                <div class="inline-block px-4 py-1.5 mb-5 border border-zinc-200 rounded-full text-xs font-bold text-zinc-500 tracking-wider uppercase">案例 01</div>
+                <h4 class="text-3xl md:text-4xl font-bold text-zinc-900 mb-6">智律协同：多智能体（Multi-Agent）法律专家系统</h4>
+                <div class="flex flex-col md:flex-row gap-6 md:gap-16">
+                    <p class="text-zinc-500 leading-relaxed md:w-2/3 text-lg">
+                        比检索更懂逻辑，比生成更重证据。彻底告别传统关键字搜索的局限性。
+                    </p>
+                    <div class="md:w-1/3 flex flex-wrap gap-2 h-fit">
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">LangChain</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">HuggingFace</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">RAG增强</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">FastAPI</span>
+                    </div>
+                </div>
+            </div>
+            <!-- 横向吸附画廊 -->
+            <div class="w-full relative reveal-item group/gallery">
+                <div class="gallery-container flex gap-6 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-80rem)/2+1.5rem)] pb-8 pt-4 cursor-grab active:cursor-grabbing">
+                    <!-- 占位图，后续存入 images/a1-1.jpg 等 -->
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Algorithm1.jpg" onerror="this.src='https://picsum.photos/id/20/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">智律协同</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Algorithm2.jpg" onerror="this.src='https://picsum.photos/id/2/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">技术路线图</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Algorithm3.jpg" onerror="this.src='https://picsum.photos/id/60/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">回答准确度</div>
+                    </div>
+                      <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Algorithm4.jpg" onerror="this.src='https://picsum.photos/id/60/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">商品推送准确度</div>
+                    </div>
+                </div>
+                <div class="absolute right-10 bottom-14 flex items-center gap-2 text-zinc-400 text-sm font-medium pointer-events-none">
+                    <i class="fa-solid fa-arrow-right-long animate-pulse"></i> 左右滑动探索
+                </div>
+            </div>
+        </div>
+
+        <!-- 案例 2 -->
+        <div class="mb-32">
+            <div class="max-w-7xl mx-auto px-6 mb-10 reveal-item">
+                <div class="inline-block px-4 py-1.5 mb-5 border border-zinc-200 rounded-full text-xs font-bold text-zinc-500 tracking-wider uppercase">案例 02</div>
+                <h4 class="text-3xl md:text-4xl font-bold text-zinc-900 mb-6">集成AI模型与向量检索的仿独立站项目</h4>
+                <div class="flex flex-col md:flex-row gap-6 md:gap-16">
+                    <p class="text-zinc-500 leading-relaxed md:w-2/3 text-lg">
+                        一个仿独立站的在线购物平台，集成了AI模型与向量检索功能。用户可以通过自然语言查询商品，AI会根据用户输入的关键词从商品数据库中检索出相关商品。同时具备完善的购物流程，对标最流行的在线购物独立站。
+                    </p>
+                    <div class="md:w-1/3 flex flex-wrap gap-2 h-fit">
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">Python | FastAPI</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">Qwen 3.5 模型</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">Vue / TailwindCSS</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full relative reveal-item">
+                <div class="gallery-container flex gap-6 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-80rem)/2+1.5rem)] pb-8 pt-4 cursor-grab active:cursor-grabbing">
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/suju3.jpg" onerror="this.src='https://picsum.photos/id/119/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">完整的购物逻辑</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/suju1.jpg" onerror="this.src='https://picsum.photos/id/160/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">集成AI模型与向量检索的AI对话</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/suju4.jpg" onerror="this.src='https://picsum.photos/id/180/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">后台管理数据可视化</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/suju2.jpg" onerror="this.src='https://picsum.photos/id/119/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">仿独立站的UI设计</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 案例 3 -->
+        <div class="mb-10">
+            <div class="max-w-7xl mx-auto px-6 mb-10 reveal-item">
+                <div class="inline-block px-4 py-1.5 mb-5 border border-zinc-200 rounded-full text-xs font-bold text-zinc-500 tracking-wider uppercase">案例 03</div>
+                <h4 class="text-3xl md:text-4xl font-bold text-zinc-900 mb-6">基于算法并集成AI的仿Riddit论坛</h4>
+                <div class="flex flex-col md:flex-row gap-6 md:gap-16">
+                    <p class="text-zinc-500 leading-relaxed md:w-2/3 text-lg">
+                        一个现代化的仿Riddit全栈 Web 社区论坛应用，采用前后端分离架构。前端基于 React 19 + Tailwind CSS 构建，后端使用 Express + Prisma ORM 数据库。系统集成了 SiliconFlow 提供的 DeepSeek AI 大语言模型，协同过滤算法，RAG向量检索。为用户提供智能对话助手功能。
+                    </p>
+                    <div class="md:w-1/3 flex flex-wrap gap-2 h-fit">
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">TypeScript | React</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">RAG | DeepSeek-R1-0528-Qwen3-8B</span>
+                        <span class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg text-sm font-semibold">Express | Prisma ORM</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full relative reveal-item">
+                <div class="gallery-container flex gap-6 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-80rem)/2+1.5rem)] pb-8 pt-4 cursor-grab active:cursor-grabbing">
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/forum1.jpg" onerror="this.src='https://picsum.photos/id/201/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">热门分区推荐算法</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/forum2.jpg" onerror="this.src='https://picsum.photos/id/350/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">RAG检索AI对话</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/forum3.jpg" onerror="this.src='https://picsum.photos/id/400/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">后台数据监控大屏</div>
+                    </div>
+                    <div class="gallery-item shrink-0 w-[85vw] md:w-[60vw] aspect-[16/9] rounded-[2rem] overflow-hidden bg-zinc-100 shadow-soft border border-zinc-200 group relative">
+                        <img src="images/forum4.jpg" onerror="this.src='https://picsum.photos/id/201/1200/675'" class="w-full h-full object-cover img-hover-zoom pointer-events-none" alt="配图">
+                        <div class="absolute bottom-6 left-8 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-zinc-900 shadow-sm">仿Riddit评论楼中楼格式</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 瀑布流技术栈池 -->
+        <div class="w-full overflow-hidden relative reveal-item bg-zinc-50/50 py-12 mt-20 border-t border-zinc-200">
+            <div class="absolute left-0 top-0 bottom-0 w-20 md:w-56 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-20 md:w-56 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+            
+            <div class="flex flex-col gap-5 hover:[&>div]:animation-play-state-paused">
+                <!-- 行 1: 左 -->
+                <div class="flex w-max">
+                    <div class="flex gap-4 animate-marquee px-2 items-center">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-python"></i> PyTorch</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-link"></i> LangChain</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-vuejs"></i> Vue 3</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-database"></i> Redis</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-react"></i> Next.js</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-docker"></i> Docker</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-server"></i> Nginx</div>
+                    </div>
+                    <!-- 复制无缝 -->
+                    <div class="flex gap-4 animate-marquee px-2 items-center" aria-hidden="true">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-python"></i> PyTorch</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-link"></i> LangChain</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-vuejs"></i> Vue 3</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-database"></i> Redis</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-react"></i> Next.js</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-docker"></i> Docker</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-server"></i> Nginx</div>
+                    </div>
+                </div>
+
+                <!-- 行 2: 右 -->
+                <div class="flex w-max -ml-[300px]">
+                    <div class="flex gap-4 animate-marquee-reverse px-2 items-center">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-java"></i> Spring Boot</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-brain"></i> HuggingFace</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-leaf"></i> MongoDB</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-js"></i> TypeScript</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-layer-group"></i> Milvus DB</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-aws"></i> AWS</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-golang"></i> Go</div>
+                    </div>
+                    <!-- 复制无缝 -->
+                    <div class="flex gap-4 animate-marquee-reverse px-2 items-center" aria-hidden="true">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-java"></i> Spring Boot</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-brain"></i> HuggingFace</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-leaf"></i> MongoDB</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-js"></i> TypeScript</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-layer-group"></i> Milvus DB</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-aws"></i> AWS</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-golang"></i> Go</div>
+                    </div>
+                </div>
+
+                <!-- 行 3: 左 -->
+                <div class="flex w-max ml-[150px]">
+                    <div class="flex gap-4 animate-marquee-slow px-2 items-center">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-wind"></i> Tailwind CSS</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-network-wired"></i> Neo4j</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-bolt"></i> FastAPI</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-node"></i> Node.js</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-database"></i> PostgreSQL</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-figma"></i> Figma UI</div>
+                    </div>
+                    <!-- 复制无缝 -->
+                    <div class="flex gap-4 animate-marquee-slow px-2 items-center" aria-hidden="true">
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-wind"></i> Tailwind CSS</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-network-wired"></i> Neo4j</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-bolt"></i> FastAPI</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-node"></i> Node.js</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-solid fa-database"></i> PostgreSQL</div>
+                        <div class="px-6 py-3 bg-white border border-zinc-200 rounded-full shadow-sm flex items-center gap-2 text-sm font-semibold text-zinc-700"><i class="fa-brands fa-figma"></i> Figma UI</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 方案 B：经典管理系统 (3D交互区) -->
+        <div class="max-w-7xl mx-auto px-6 mt-28 reveal-item">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-2 h-8 bg-zinc-300 rounded-full"></div>
+                <h3 class="text-2xl md:text-3xl font-bold text-zinc-900">方案 B / 经典企业与校园系统</h3>
+                <span class="ml-auto text-xs font-bold px-4 py-2 bg-zinc-900 text-white rounded-full shadow-sm tracking-widest uppercase">性价比之选</span>
+            </div>
+            
+            <div class="relative w-full h-[550px] bg-white border border-zinc-200 rounded-[2.5rem] overflow-hidden shadow-soft group">
+                <div class="absolute inset-0 bg-gradient-to-b from-zinc-50/50 to-zinc-100/50 pointer-events-none"></div>
+                <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-sm text-zinc-400 font-medium pointer-events-none flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="fa-solid fa-hand-pointer animate-bounce"></i> 拖拽探索系统架构池
+                </div>
+                <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+            </div>
+        </div>
+
+        <!-- 过往好评展示 -->
+        <div class="max-w-7xl mx-auto px-6 mt-28 mb-10 reveal-item">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="w-2 h-8 bg-zinc-900 rounded-full"></div>
+                <h3 class="text-2xl md:text-3xl font-bold text-zinc-900">过往好评展示</h3>
+                <span class="ml-auto text-xs font-bold px-4 py-2 bg-zinc-100 text-zinc-600 rounded-full shadow-sm tracking-widest uppercase">真实反馈</span>
+            </div>
+
+            <!-- 好评轮播容器 -->
+            <div class="w-full relative">
+                <div class="testimonial-container flex gap-5 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-80rem)/2+1.5rem)] pb-8 pt-4 cursor-grab active:cursor-grabbing items-end">
+                    <!-- 好评图片 1 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation1.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 2 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation2.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 3 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation3.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 4 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation4.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 5 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation5.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 6 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation6.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 7 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation7.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 8 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation8.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 9 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation9.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 10 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation10.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 11 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation11.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 12 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation12.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                    <!-- 好评图片 13 -->
+                    <div class="testimonial-item shrink-0 rounded-[1.5rem] overflow-hidden bg-white shadow-soft border border-zinc-200 group relative">
+                        <img src="images/Evaluation13.jpg" class="w-auto h-auto max-h-[320px] md:max-h-[400px] object-contain img-hover-zoom pointer-events-none block" alt="好评截图">
+                    </div>
+                </div>
+                <!-- 滑动提示 -->
+                <div class="absolute right-10 bottom-14 flex items-center gap-2 text-zinc-400 text-sm font-medium pointer-events-none">
+                    <i class="fa-solid fa-arrow-right-long animate-pulse"></i> 左右滑动查看更多
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. 联系信息 -->
+    <section class="py-32 max-w-4xl mx-auto px-6 text-center reveal-item" id="contact">
+        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-zinc-900 mb-6">准备好开启高分毕设了吗？</h2>
+        <p class="text-zinc-500 mb-12 text-lg">扫码添加微信，获取完整技术方案文档、架构图与往期实机演示视频</p>
+        
+        <div class="flex flex-col items-center">
+            <div class="w-56 h-56 bg-white border border-zinc-200 rounded-3xl shadow-soft flex flex-col items-center justify-center mb-8 relative overflow-hidden group">
+                <img class="text-xs text-zinc-400 font-medium text-center px-4 leading-relaxed -mt-1 scale-110" src="images/vx_code.jpg" alt="二维码占位">
+            </div>
+            
+            <div class="flex items-center gap-3 px-8 py-4 bg-zinc-100 rounded-full border border-zinc-200 hover:bg-zinc-200 transition-colors cursor-pointer">
+                <i class="fa-brands fa-weixin text-[#07C160] text-2xl"></i>
+                <span class="font-semibold text-zinc-800 tracking-wide text-lg">WeChat: <span class="font-bold">lloopsll</span></span>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-zinc-200 py-10 text-center text-sm text-zinc-400">
+        <p>&copy; 2026 Graduation Studio. </p>
+    </footer>
+
+    <!-- 核心 JS 逻辑 -->
+    <script>
+        // 1. 首屏加载幕布解除
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('page-loader').classList.add('hide');
+            }, 400); // 轻微延迟，保证加载动画线走完
+        });
+
+        // 2. 渐进式滚动显现特效 (Apple Style)
+        const observerOptions = { root: null, rootMargin: '0px 0px -50px 0px', threshold: 0.15 };
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.reveal-item').forEach(el => observer.observe(el));
+
+        // 3. 顶部阅读进度条
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress-bar').style.width = scrolled + "%";
+        });
+
+        // 4. 画廊拖拽辅助 + 持续自动滚动（无缝循环）
+        function initAutoScroll(gallery, speed = 1.2) {
+            let isDown = false, startX, scrollLeft;
+            let isHovering = false;
+            let animationId = null;
+            let scrollSpeed = speed;
+
+            // 复制所有图片项实现无缝循环
+            const items = gallery.querySelectorAll('.gallery-item, .testimonial-item');
+            items.forEach(item => {
+                const clone = item.cloneNode(true);
+                gallery.appendChild(clone);
+            });
+
+            // 持续自动滚动函数
+            const autoScroll = () => {
+                // 始终保持 scroll-snap 为 none，避免悬停时的吸附拽回效果
+                gallery.style.scrollSnapType = 'none';
+
+                if (!isDown && !isHovering) {
+                    gallery.scrollLeft += scrollSpeed;
+
+                    // 无缝循环：当滚动过原始内容一半时，重置到开头
+                    const originalWidth = gallery.scrollWidth / 2;
+                    if (gallery.scrollLeft >= originalWidth) {
+                        gallery.scrollLeft = 0;
+                    }
+                }
+                // 悬停时只暂停自动滚动，不恢复 scroll-snap
+                animationId = requestAnimationFrame(autoScroll);
+            };
+
+            // 启动自动滚动
+            animationId = requestAnimationFrame(autoScroll);
+
+            // 鼠标悬停检测
+            gallery.addEventListener('mouseenter', () => { isHovering = true; });
+            gallery.addEventListener('mouseleave', () => { isHovering = false; });
+
+            // 拖拽功能
+            gallery.addEventListener('mousedown', e => {
+                isDown = true;
+                gallery.style.scrollSnapType = 'none';
+                startX = e.pageX - gallery.offsetLeft;
+                scrollLeft = gallery.scrollLeft;
+            });
+            const stopDrag = () => {
+                isDown = false;
+            };
+            gallery.addEventListener('mouseleave', stopDrag);
+            gallery.addEventListener('mouseup', stopDrag);
+            gallery.addEventListener('mousemove', e => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - gallery.offsetLeft;
+                gallery.scrollLeft = scrollLeft - (x - startX) * 1.5;
+            });
+
+            // 页面可见性变化时暂停/恢复自动滚动
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (animationId) cancelAnimationFrame(animationId);
+                } else {
+                    animationId = requestAnimationFrame(autoScroll);
+                }
+            });
+        }
+
+        // 初始化所有画廊
+        document.querySelectorAll('.gallery-container').forEach(gallery => {
+            initAutoScroll(gallery, 1.2);
+        });
+
+        // 初始化好评轮播（速度更慢，0.4像素/帧）
+        document.querySelectorAll('.testimonial-container').forEach(gallery => {
+            initAutoScroll(gallery, 0.4);
+        });
+    </script>
+
+    <!-- Three.js 3D 渲染模块 -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const container = document.getElementById('canvas-container');
+        if (container) {
+            const scene = new THREE.Scene();
+            // 焦距设置拉远，提供更宽广优雅的视角
+            const camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 1, 1000);
+            camera.position.set(0, 0, 480);
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(container.clientWidth, container.clientHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0px';
+            container.appendChild(labelRenderer.domElement);
+
+            const controls = new OrbitControls(camera, labelRenderer.domElement);
+            controls.enableZoom = false; 
+            controls.enablePan = false;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.8; // 更缓慢的转速，显高级
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            const group = new THREE.Group();
+            scene.add(group);
+
+            const systemNames = [
+                "校园招聘系统", "二手交易商城", "图书馆管理系统", "教务排课系统", 
+                "在线考试平台", "宿舍物业管理", "外卖点餐系统", "电影售票系统", 
+                "企业人事OA", "医院挂号问诊", "酒店客房预订", "车辆违章查询", 
+                "旅游景点导览", "技术博客论坛", "社团管理系统", "智能停车收费",
+                "运动场馆预约", "心理健康测评", "冷链物流管理", "智慧社区大屏"
+            ];
+
+            const radius = 160; 
+            const n = systemNames.length;
+            const phi = Math.PI * (3 - Math.sqrt(5));
+
+            systemNames.forEach((text, i) => {
+                const y = 1 - (i / (n - 1)) * 2;
+                const r = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+
+                // 外层：用于 Three.js 的绝对定位
+                const wrapper = document.createElement('div');
+                wrapper.style.pointerEvents = 'none';
+
+                // 内层：用于展示、滤镜及 Hover 放大（解决跳屏 BUG）
+                const inner = document.createElement('div');
+                inner.className = 'sphere-label-inner';
+                inner.textContent = text;
+                
+                wrapper.appendChild(inner);
+                
+                const label = new CSS2DObject(wrapper);
+                label.position.set(Math.cos(theta) * r * radius, y * radius, Math.sin(theta) * r * radius);
+                group.add(label);
+            });
+
+            // 交互时暂停旋转
+            labelRenderer.domElement.addEventListener('pointerenter', () => { controls.autoRotate = false; });
+            labelRenderer.domElement.addEventListener('pointerleave', () => { controls.autoRotate = true; });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                labelRenderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+                labelRenderer.render(scene, camera);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
